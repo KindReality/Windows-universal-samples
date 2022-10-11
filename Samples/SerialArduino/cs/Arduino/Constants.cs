@@ -1,4 +1,4 @@
-﻿//*********************************************************
+//*********************************************************
 //
 // Copyright (c) Microsoft. All rights reserved.
 // This code is licensed under the MIT License (MIT).
@@ -28,7 +28,7 @@ namespace SerialArduino
     public class ArduinoDevice
     {
         public const UInt16 Vid = 0x2341;
-        public const UInt16 Pid = 0x0043;
+        public const UInt16 Pid = 0x8036;
     }
 
 }

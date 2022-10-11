@@ -28,7 +28,7 @@
   
   <Capabilities>
     <DeviceCapability Name="serialcommunication">
-      <Device Id="vidpid:2341 0043">
+      <Device Id="vidpid:2341 8037 usb">
         <Function Type="name:serialPort" />
       </Device>
     </DeviceCapability>

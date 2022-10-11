@@ -14,8 +14,8 @@
     <AssemblyName>SerialArduino</AssemblyName>
     <DefaultLanguage>en-US</DefaultLanguage>
     <TargetPlatformIdentifier>UAP</TargetPlatformIdentifier>
-    <TargetPlatformVersion>10.0.22000.0</TargetPlatformVersion>
-    <TargetPlatformMinVersion>10.0.22000.0</TargetPlatformMinVersion>
+    <TargetPlatformVersion>10.0.19041.0</TargetPlatformVersion>
+    <TargetPlatformMinVersion>10.0.19041.0</TargetPlatformMinVersion>
     <MinimumVisualStudioVersion>14</MinimumVisualStudioVersion>
     <EnableDotNetNativeCompatibleProfile>true</EnableDotNetNativeCompatibleProfile>
     <FileAlignment>512</FileAlignment>
@@ -95,9 +95,9 @@
       <Link>App.xaml.cs</Link>
       <DependentUpon>App.xaml</DependentUpon>
     </Compile>
-    <Compile Include="Constants.cs" />
-    <Compile Include="DeviceListEntry.cs" />
-    <Compile Include="EventHandlerForDevice.cs" />
+    <Compile Include="Arduino\Constants.cs" />
+    <Compile Include="Arduino\DeviceListEntry.cs" />
+    <Compile Include="Arduino\EventHandlerForDevice.cs" />
     <Compile Include="$(SharedContentDir)\cs\MainPage.xaml.cs">
       <Link>MainPage.xaml.cs</Link>
       <DependentUpon>MainPage.xaml</DependentUpon>
@@ -112,7 +112,7 @@
     <Compile Include="Scenario2_LEDTemp.xaml.cs">
       <DependentUpon>Scenario2_LEDTemp.xaml</DependentUpon>
     </Compile>
-    <Compile Include="Utilities.cs" />
+    <Compile Include="Arduino\Utilities.cs" />
   </ItemGroup>
   <ItemGroup>
     <AppxManifest Include="Package.appxmanifest">

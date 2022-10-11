@@ -61,7 +61,7 @@ namespace SerialArduino
 
         public Scenario1_ConnectDisconnect()
         {
-            this.InitializeComponent();
+            InitializeComponent();
 
             listOfDevices = new ObservableCollection<DeviceListEntry>();
 
@@ -90,8 +90,8 @@ namespace SerialArduino
                 UpdateConnectDisconnectButtonsAndList(false);
 
                 // These notifications will occur if we are waiting to reconnect to device when we start the page
-                EventHandlerForDevice.Current.OnDeviceConnected = this.OnDeviceConnected;
-                EventHandlerForDevice.Current.OnDeviceClose = this.OnDeviceClosing;
+                EventHandlerForDevice.Current.OnDeviceConnected = OnDeviceConnected;
+                EventHandlerForDevice.Current.OnDeviceClose = OnDeviceClosing;
             }
             else
             {
@@ -138,8 +138,8 @@ namespace SerialArduino
                     EventHandlerForDevice.CreateNewEventHandlerForDevice();
 
                     // Get notified when the device was successfully connected to or about to be closed
-                    EventHandlerForDevice.Current.OnDeviceConnected = this.OnDeviceConnected;
-                    EventHandlerForDevice.Current.OnDeviceClose = this.OnDeviceClosing;
+                    EventHandlerForDevice.Current.OnDeviceConnected = OnDeviceConnected;
+                    EventHandlerForDevice.Current.OnDeviceClose = OnDeviceClosing;
 
                     // It is important that the FromIdAsync call is made on the UI thread because the consent prompt, when present,
                     // can only be displayed on the UI thread. Since this method is invoked by the UI, we are already in the UI thread.
@@ -197,8 +197,8 @@ namespace SerialArduino
 
         private void StartHandlingAppEvents()
         {
-            appSuspendEventHandler = new SuspendingEventHandler(this.OnAppSuspension);
-            appResumeEventHandler = new EventHandler<Object>(this.OnAppResume);
+            appSuspendEventHandler = new SuspendingEventHandler(OnAppSuspension);
+            appResumeEventHandler = new EventHandler<Object>(OnAppResume);
 
             // This event is raised when the app is exited and when the app is suspended
             App.Current.Suspending += appSuspendEventHandler;
@@ -217,15 +217,15 @@ namespace SerialArduino
         /// <summary>
         /// Registers for Added, Removed, and Enumerated events on the provided deviceWatcher before adding it to an internal list.
         /// </summary>
-        /// <param name="deviceWatcher"></param>
+        /// <param name="newDeviceWatcher"></param>
         /// <param name="deviceSelector">The AQS used to create the device watcher</param>
-        private void AddDeviceWatcher(DeviceWatcher deviceWatcher, String deviceSelector)
+        private void AddDeviceWatcher(DeviceWatcher newDeviceWatcher, String deviceSelector)
         {
-            deviceWatcher.Added += new TypedEventHandler<DeviceWatcher, DeviceInformation>(this.OnDeviceAdded);
-            deviceWatcher.Removed += new TypedEventHandler<DeviceWatcher, DeviceInformationUpdate>(this.OnDeviceRemoved);
-            deviceWatcher.EnumerationCompleted += new TypedEventHandler<DeviceWatcher, Object>(this.OnDeviceEnumerationComplete);
+            newDeviceWatcher.Added += new TypedEventHandler<DeviceWatcher, DeviceInformation>(OnDeviceAdded);
+            newDeviceWatcher.Removed += new TypedEventHandler<DeviceWatcher, DeviceInformationUpdate>(OnDeviceRemoved);
+            newDeviceWatcher.EnumerationCompleted += new TypedEventHandler<DeviceWatcher, Object>(OnDeviceEnumerationComplete);
 
-            mapDeviceWatchersToDeviceSelector.Add(deviceWatcher, deviceSelector);
+            mapDeviceWatchersToDeviceSelector.Add(newDeviceWatcher, deviceSelector);
         }
 
         /// <summary>

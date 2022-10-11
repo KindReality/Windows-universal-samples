@@ -1,4 +1,4 @@
-﻿//*********************************************************
+//*********************************************************
 //
 // Copyright (c) Microsoft. All rights reserved.
 // This code is licensed under the MIT License (MIT).
@@ -9,12 +9,14 @@
 //
 //*********************************************************
 
+using Windows.Devices.SerialCommunication;
+using Windows.Devices.Enumeration;
+using Windows.Storage.Streams;
 using System;
 using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
 using Windows.ApplicationModel;
-using Windows.Devices.Enumeration;
 using Windows.Devices.Sensors;
 using Windows.Foundation;
 using Windows.Foundation.Metadata;
@@ -28,13 +30,14 @@ using Windows.Media.MediaProperties;
 using Windows.Phone.UI.Input;
 using Windows.Storage;
 using Windows.Storage.FileProperties;
-using Windows.Storage.Streams;
 using Windows.System.Display;
 using Windows.UI.Core;
 using Windows.UI.Xaml;
 using Windows.UI.Xaml.Controls;
 using Windows.UI.Xaml.Media;
 using Windows.UI.Xaml.Navigation;
+using Windows.UI.Popups;
+using System.Threading;
 
 namespace CameraAdvancedCapture
 {
@@ -94,7 +97,7 @@ namespace CameraAdvancedCapture
 
         public MainPage()
         {
-            this.InitializeComponent();
+            InitializeComponent();
 
             // Do not cache the state of the UI when suspending/navigating
             NavigationCacheMode = NavigationCacheMode.Disabled;
@@ -106,6 +109,46 @@ namespace CameraAdvancedCapture
             // Set the maximum on the progress bar
             HdrImpactBar.Maximum = CERTAINTY_CAP;
         }
+
+
+        private async void Page_Loaded(object sender, RoutedEventArgs e)
+        {
+            string selector = SerialDevice.GetDeviceSelector("COM8");
+            DeviceInformationCollection devices = await DeviceInformation.FindAllAsync();
+            if (devices.Count > 0)
+            {
+                DeviceInformation deviceInfo = devices[0];
+                SerialDevice serialDevice = await SerialDevice.FromIdAsync(deviceInfo.Id);
+                serialDevice.BaudRate = 9600;
+                serialDevice.DataBits = 8;
+                serialDevice.StopBits = SerialStopBitCount.Two;
+                serialDevice.Parity = SerialParity.None;
+
+                DataWriter dataWriter = new DataWriter(serialDevice.OutputStream);
+                dataWriter.WriteString("your message here");
+                await dataWriter.StoreAsync();
+
+                DataReader dataReader = new DataReader(serialDevice.InputStream);
+
+                while (true)
+                {
+                    bool data = dataReader.ReadBoolean();
+                    Debug.WriteLine(data);
+                }
+
+
+
+
+
+
+            }
+            else
+            {
+                MessageDialog popup = new MessageDialog("Sorry, no device found.");
+                await popup.ShowAsync();
+            }
+        }
+
 
         private async void Application_Suspending(object sender, SuspendingEventArgs e)
         {
@@ -161,7 +204,7 @@ namespace CameraAdvancedCapture
         /// <param name="sender"></param>
         /// <param name="args"></param>
         private async void SystemMediaControls_PropertyChanged(SystemMediaTransportControls sender, SystemMediaTransportControlsPropertyChangedEventArgs args)
-        { 
+        {
             await Dispatcher.RunAsync(CoreDispatcherPriority.Normal, async () =>
             {
                 // Only handle this event if this page is currently being displayed
@@ -247,7 +290,7 @@ namespace CameraAdvancedCapture
         {
             // Retrieve the context (i.e. the information about the capture this event belongs to)
             var context = args.Context as AdvancedCaptureContext;
-            
+
             // Add "_Reference" at the end of the filename to create when saving the reference photo
             var referenceName = context.CaptureFileName.Replace(".jpg", "_Reference.jpg");
 
@@ -307,7 +350,7 @@ namespace CameraAdvancedCapture
             if (_mediaCapture == null)
             {
                 // Attempt to get the back camera if one is available, but use any camera device if not
-                var cameraDevice = await FindCameraDeviceByPanelAsync(Windows.Devices.Enumeration.Panel.Back);
+                var cameraDevice = await FindCameraDeviceByPanelAsync(Windows.Devices.Enumeration.Panel.Top);
 
                 if (cameraDevice == null)
                 {
@@ -399,7 +442,10 @@ namespace CameraAdvancedCapture
         private async Task SetPreviewRotationAsync()
         {
             // Only need to update the orientation if the camera is mounted on the device
-            if (_externalCamera) return;
+            if (_externalCamera)
+            {
+                return;
+            }
 
             // Calculate which way and how far to rotate the preview
             int rotationDegrees = ConvertDisplayOrientationToDegrees(_displayOrientation);
@@ -484,7 +530,10 @@ namespace CameraAdvancedCapture
         private async Task EnableAdvancedCaptureAsync()
         {
             // No work to be done if there already is an AdvancedCapture instance
-            if (_advancedCapture != null) return;
+            if (_advancedCapture != null)
+            {
+                return;
+            }
 
             // Configure one of the modes in the control
             CycleAdvancedCaptureMode();
@@ -533,7 +582,10 @@ namespace CameraAdvancedCapture
         private async Task DisableAdvancedCaptureAsync()
         {
             // No work to be done if there is no AdvancedCapture
-            if (_advancedCapture == null) return;
+            if (_advancedCapture == null)
+            {
+                return;
+            }
 
             await _advancedCapture.FinishAsync();
             _advancedCapture = null;
@@ -559,10 +611,10 @@ namespace CameraAdvancedCapture
                 Debug.WriteLine("Taking Advanced Capture photo...");
                 // Read the current orientation of the camera and the capture time
                 var photoOrientation = ConvertOrientationToPhotoOrientation(GetCameraOrientation());
-                var fileName = String.Format("AdvancedCapturePhoto_{0}.jpg", DateTime.Now.ToString("HHmmss"));
+                var fileName = String.Format(@"Working\AdvancedCapturePhoto_{0}.jpg", DateTime.Now.ToString("HHmmss"));
 
                 // Create a context object, to identify the capture later on
-                var context = new AdvancedCaptureContext {CaptureFileName = fileName, CaptureOrientation = photoOrientation};
+                var context = new AdvancedCaptureContext { CaptureFileName = fileName, CaptureOrientation = photoOrientation };
 
                 // Start capture, and pass the context object to get it back in the OptionalReferencePhotoCaptured event
                 var capture = await _advancedCapture.CaptureAsync(context);
@@ -636,29 +688,29 @@ namespace CameraAdvancedCapture
         /// </summary>
         /// <returns></returns>
         private async Task SetupUiAsync()
+        {
+            // Attempt to lock page to landscape orientation to prevent the CaptureElement from rotating, as this gives a better experience
+            DisplayInformation.AutoRotationPreferences = DisplayOrientations.Landscape;
+
+            // Hide the status bar
+            if (ApiInformation.IsTypePresent("Windows.UI.ViewManagement.StatusBar"))
             {
-                // Attempt to lock page to landscape orientation to prevent the CaptureElement from rotating, as this gives a better experience
-                DisplayInformation.AutoRotationPreferences = DisplayOrientations.Landscape;
-
-                // Hide the status bar
-                if (ApiInformation.IsTypePresent("Windows.UI.ViewManagement.StatusBar"))
-                {
-                    await Windows.UI.ViewManagement.StatusBar.GetForCurrentView().HideAsync();
-                }
-
-                // Populate orientation variables with the current state
-                _displayOrientation = _displayInformation.CurrentOrientation;
-                if (_orientationSensor != null)
-                {
-                    _deviceOrientation = _orientationSensor.GetCurrentOrientation();
-                }
-
-                RegisterEventHandlers();
-
-                var picturesLibrary = await StorageLibrary.GetLibraryAsync(KnownLibraryId.Pictures);
-                // Fall back to the local app storage if the Pictures Library is not available
-                _captureFolder = picturesLibrary.SaveFolder ?? ApplicationData.Current.LocalFolder;
+                await Windows.UI.ViewManagement.StatusBar.GetForCurrentView().HideAsync();
             }
+
+            // Populate orientation variables with the current state
+            _displayOrientation = _displayInformation.CurrentOrientation;
+            if (_orientationSensor != null)
+            {
+                _deviceOrientation = _orientationSensor.GetCurrentOrientation();
+            }
+
+            RegisterEventHandlers();
+
+            var picturesLibrary = await StorageLibrary.GetLibraryAsync(KnownLibraryId.Pictures);
+            // Fall back to the local app storage if the Pictures Library is not available
+            _captureFolder = picturesLibrary.SaveFolder ?? ApplicationData.Current.LocalFolder;
+        }
 
         /// <summary>
         /// Unregisters event handlers for hardware buttons and orientation sensors, allows the StatusBar (on Phone) to show, and removes the page orientation lock
@@ -744,7 +796,7 @@ namespace CameraAdvancedCapture
             var allVideoDevices = await DeviceInformation.FindAllAsync(DeviceClass.VideoCapture);
 
             // Get the desired camera by panel
-            DeviceInformation desiredDevice = allVideoDevices.FirstOrDefault(x => x.EnclosureLocation != null && x.EnclosureLocation.Panel == desiredPanel);
+            DeviceInformation desiredDevice = allVideoDevices.Skip(0).Take(1).FirstOrDefault();//.FirstOrDefault(x => x.EnclosureLocation != null && x.EnclosureLocation.Panel == desiredPanel);
 
             // If there is no device mounted on the desired panel, return the first device found
             return desiredDevice ?? allVideoDevices.FirstOrDefault();
